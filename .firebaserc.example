@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "dev": "yetkaz-dev",
+    "prod": "yetkaz-prod"
+  }
+}
