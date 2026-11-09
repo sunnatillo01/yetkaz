@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["REPLACE_TEAM_ID.uz.yetkaz.app"],
+        "components": [{ "/": "/order/*" }]
+      }
+    ]
+  }
+}
