@@ -4,13 +4,54 @@
  *   # Emulator
  *   FIRESTORE_EMULATOR_HOST=localhost:8080 GCLOUD_PROJECT=yetkaz-dev npm run seed
  *   # Real project (service account JSON, never committed)
- *   GOOGLE_APPLICATION_CREDENTIALS=./service-account.json npm run seed
+ *   GOOGLE_APPLICATION_CREDENTIALS=./service-account.json GCLOUD_PROJECT=<id> npm run seed
+ *   # Real project with a short-lived OAuth access token (e.g. the one `firebase login` holds):
+ *   # documents are written through the Firestore REST API, no service account needed.
+ *   GOOGLE_OAUTH_ACCESS_TOKEN=<token> GCLOUD_PROJECT=<id> npm run seed
  */
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
-initializeApp({ projectId: process.env.GCLOUD_PROJECT ?? 'yetkaz-dev' });
-const db = getFirestore();
+const projectId = process.env.GCLOUD_PROJECT ?? 'yetkaz-dev';
+
+type Doc = { path: string; data: Record<string, unknown> };
+
+/** Firestore REST `Value` for a plain JS value. */
+export function toValue(v: unknown): Record<string, unknown> {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === 'string') return { stringValue: v };
+  if (typeof v === 'boolean') return { booleanValue: v };
+  if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(toValue) } };
+  return { mapValue: { fields: toFields(v as Record<string, unknown>) } };
+}
+
+function toFields(data: Record<string, unknown>) {
+  return Object.fromEntries(Object.entries(data).map(([k, v]) => [k, toValue(v)]));
+}
+
+async function writeWithAdmin(docs: Doc[]) {
+  initializeApp({ projectId });
+  const db = getFirestore();
+  for (let i = 0; i < docs.length; i += 500) {
+    const batch = db.batch();
+    for (const d of docs.slice(i, i + 500)) batch.set(db.doc(d.path), d.data);
+    await batch.commit();
+  }
+}
+
+async function writeWithRest(docs: Doc[], token: string) {
+  const root = `projects/${projectId}/databases/(default)/documents`;
+  for (let i = 0; i < docs.length; i += 500) {
+    const writes = docs.slice(i, i + 500).map((d) => ({ update: { name: `${root}/${d.path}`, fields: toFields(d.data) } }));
+    const res = await fetch(`https://firestore.googleapis.com/v1/${root}:commit`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ writes }),
+    });
+    if (!res.ok) throw new Error(`Firestore commit failed: ${res.status} ${await res.text()}`);
+  }
+}
 
 const img = (id: string, w = 800) => `https://images.unsplash.com/${id}?w=${w}&q=80&auto=format&fit=crop`;
 
@@ -91,6 +132,14 @@ const restaurants = [
   { id: 'sweet-bakery', name: 'Sweet Bakery', cat: ['dessert'], menu: 'dessert', image: IMAGES.dessert, rating: 4.8, time: 25, fee: 0, min: 30000, open: '08:00', close: '22:00', lat: 41.3094, lng: 69.2878, pop: 590 },
   { id: 'green-bowl', name: 'Green Bowl', cat: ['healthy'], menu: 'healthy', image: IMAGES.bowl, rating: 4.4, time: 30, fee: 9000, min: 45000, open: '08:00', close: '21:00', lat: 41.3301, lng: 69.2717, pop: 470 },
   { id: 'night-food', name: 'Night Food', cat: ['burger', 'pizza'], menu: 'burger', image: IMAGES.food, rating: 3.8, time: 40, fee: 12000, min: 40000, open: '18:00', close: '05:00', lat: 41.2817, lng: 69.2431, pop: 300 },
+  { id: 'margherita', name: 'Margherita', cat: ['pizza'], menu: 'pizza', image: IMAGES.pizza2, rating: 4.3, time: 35, fee: 8000, min: 50000, open: '10:00', close: '23:00', lat: 41.3152, lng: 69.2483, pop: 410 },
+  { id: 'samarqand-darvoza', name: 'Samarqand Darvoza', cat: ['national'], menu: 'national', image: IMAGES.plov, rating: 4.6, time: 40, fee: 7000, min: 60000, open: '09:00', close: '23:00', lat: 41.3205, lng: 69.2302, pop: 560 },
+  { id: 'smash-burger', name: 'Smash Burger', cat: ['burger'], menu: 'burger', image: IMAGES.burger, rating: 4.5, time: 25, fee: 6000, min: 35000, open: '10:00', close: '02:00', lat: 41.3027, lng: 69.2794, pop: 520 },
+  { id: 'osh-markazi', name: 'Osh Markazi', cat: ['national'], menu: 'national', image: IMAGES.plov, rating: 4.7, time: 35, fee: 5000, min: 40000, open: '07:00', close: '15:00', lat: 41.3389, lng: 69.2851, pop: 640 },
+  { id: 'wasabi', name: 'Wasabi', cat: ['sushi'], menu: 'sushi', image: IMAGES.sushi, rating: 4.0, time: 60, fee: 12000, min: 90000, open: '12:00', close: '23:00', lat: 41.2988, lng: 69.2235, pop: 260 },
+  { id: 'cake-lab', name: 'Cake Lab', cat: ['dessert'], menu: 'dessert', image: IMAGES.dessert, rating: 4.6, time: 30, fee: 9000, min: 40000, open: '09:00', close: '21:00', lat: 41.3256, lng: 69.2559, pop: 430 },
+  { id: 'fit-kitchen', name: 'Fit Kitchen', cat: ['healthy'], menu: 'healthy', image: IMAGES.salad, rating: 4.3, time: 35, fee: 8000, min: 50000, open: '07:00', close: '20:00', lat: 41.2879, lng: 69.2687, pop: 350 },
+  { id: 'lavash-center', name: 'Lavash Center', cat: ['burger', 'national'], menu: 'burger', image: IMAGES.kebab, rating: 4.2, time: 20, fee: 5000, min: 30000, open: '10:00', close: '03:00', lat: 41.3113, lng: 69.2955, pop: 610 },
 ];
 
 /** Lower-case prefixes (min 2 chars) of every word of [texts]. */
@@ -104,55 +153,65 @@ export function keywords(...texts: string[]): string[] {
   return [...set];
 }
 
-async function seed() {
-  const batch = db.batch();
+/** Every document the seed writes, in write order. */
+export function buildSeed(): Doc[] {
+  const docs: Doc[] = [];
   for (const c of categories) {
-    batch.set(db.collection('categories').doc(c.id), { name: c.name, iconUrl: img(c.icon, 200), order: c.order });
+    docs.push({ path: `categories/${c.id}`, data: { name: c.name, iconUrl: img(c.icon, 200), order: c.order } });
   }
   ['napoli', 'besh-qozon', 'burger-lab'].forEach((id, i) => {
     const r = restaurants.find((x) => x.id === id)!;
-    batch.set(db.collection('banners').doc(`banner-${i + 1}`), {
-      imageUrl: img(r.image, 1200), restaurantId: id, order: i + 1, isActive: true,
+    docs.push({
+      path: `banners/banner-${i + 1}`,
+      data: { imageUrl: img(r.image, 1200), restaurantId: id, order: i + 1, isActive: true },
     });
   });
-  await batch.commit();
-
   for (const r of restaurants) {
     const dishes = MENUS[r.menu];
     const sections = [...new Set(dishes.map((d) => d.section))];
-    const ref = db.collection('restaurants').doc(r.id);
-    await ref.set({
-      name: r.name,
-      imageUrl: img(r.image),
-      categoryIds: r.cat,
-      rating: r.rating,
-      deliveryTimeMin: r.time,
-      deliveryFee: r.fee,
-      minOrder: r.min,
-      openTime: r.open,
-      closeTime: r.close,
-      lat: r.lat,
-      lng: r.lng,
-      popularity: r.pop,
-      searchKeywords: keywords(r.name, ...dishes.map((d) => d.name)),
+    docs.push({
+      path: `restaurants/${r.id}`,
+      data: {
+        name: r.name,
+        imageUrl: img(r.image),
+        categoryIds: r.cat,
+        rating: r.rating,
+        deliveryTimeMin: r.time,
+        deliveryFee: r.fee,
+        minOrder: r.min,
+        openTime: r.open,
+        closeTime: r.close,
+        lat: r.lat,
+        lng: r.lng,
+        popularity: r.pop,
+        searchKeywords: keywords(r.name, ...dishes.map((d) => d.name)),
+      },
     });
-    const menuBatch = db.batch();
     dishes.forEach((d, i) => {
-      menuBatch.set(ref.collection('menu').doc(`${r.id}-${i + 1}`), {
-        section: d.section,
-        sectionOrder: sections.indexOf(d.section),
-        order: i,
-        name: d.name,
-        description: d.description,
-        price: d.price,
-        imageUrl: img(d.image, 400),
-        options: d.options ?? [],
-        isAvailable: true,
+      docs.push({
+        path: `restaurants/${r.id}/menu/${r.id}-${i + 1}`,
+        data: {
+          section: d.section,
+          sectionOrder: sections.indexOf(d.section),
+          order: i,
+          name: d.name,
+          description: d.description,
+          price: d.price,
+          imageUrl: img(d.image, 400),
+          options: d.options ?? [],
+          isAvailable: true,
+        },
       });
     });
-    await menuBatch.commit();
   }
-  console.log(`Seeded ${categories.length} categories, ${restaurants.length} restaurants.`);
+  return docs;
+}
+
+async function seed() {
+  const docs = buildSeed();
+  const token = process.env.GOOGLE_OAUTH_ACCESS_TOKEN;
+  await (token ? writeWithRest(docs, token) : writeWithAdmin(docs));
+  console.log(`Seeded ${categories.length} categories, ${restaurants.length} restaurants (${docs.length} documents).`);
 }
 
 if (require.main === module) {
