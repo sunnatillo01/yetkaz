@@ -2,6 +2,13 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/), versiyalash: [SemVer](https://semver.org/).
 
+## [1.0.2] - 2026-11-10
+
+### Added
+- Seed: 20 ta restoran (texnik topshiriq bo'yicha), seed ma'lumotlari uchun unit testlar.
+- Seed'ni service account'siz, OAuth token bilan (Firestore REST API) ishga tushirish imkoniyati.
+- Release APK imzolash kaliti va prod sozlamalari GitHub Secrets'da.
+
 ## [1.0.1] - 2026-11-10
 
 ### Fixed
