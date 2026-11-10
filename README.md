@@ -184,8 +184,15 @@ cp env/prod.example.json env/prod.json
 firebase use dev
 firebase deploy --only firestore:rules,firestore:indexes,storage
 cd functions && npm ci && npm run deploy
+# seed: service account bilan ...
 GOOGLE_APPLICATION_CREDENTIALS=../service-account.json GCLOUD_PROJECT=yetkaz-dev npm run seed
+# ... yoki service account'siz, qisqa muddatli OAuth token bilan (Firestore REST API orqali yoziladi)
+GOOGLE_OAUTH_ACCESS_TOKEN=<token> GCLOUD_PROJECT=yetkaz-dev npm run seed
 ```
+
+Seed: 6 kategoriya, 3 banner, 20 restoran va ularning menyulari.
+
+Demo uchun Authentication → Phone → *Phone numbers for testing* bo'limiga test raqam qo'shing (masalan `+998 90 123 45 67` → `123456`): SMS yuborilmaydi va kvota sarflanmaydi.
 
 ### 4. Ilova
 
