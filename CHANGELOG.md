@@ -2,6 +2,14 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/), versiyalash: [SemVer](https://semver.org/).
 
+## [1.0.1] - 2026-11-10
+
+### Fixed
+- Internet banneri ko'ringanda yuqorida ikki marta padding paydo bo'lishi; banner faqat holat o'zgarganda qayta chiziladi.
+
+### Changed
+- README'da GitHub badge havolalari; release workflow maxfiy kalitlar bo'lmasa o'tkazib yuboriladi.
+
 ## [1.0.0] - 2026-11-09
 
 ### Added

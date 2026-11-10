@@ -1,7 +1,7 @@
 # Yetkaz — ovqat yetkazib berish ilovasi
 
-[![CI](https://github.com/OWNER/yetkaz/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/yetkaz/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/OWNER/yetkaz/branch/main/graph/badge.svg)](https://codecov.io/gh/OWNER/yetkaz)
+[![CI](https://github.com/sunnatillo01/yetkaz/actions/workflows/ci.yml/badge.svg)](https://github.com/sunnatillo01/yetkaz/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/sunnatillo01/yetkaz/branch/main/graph/badge.svg)](https://codecov.io/gh/sunnatillo01/yetkaz)
 ![Flutter](https://img.shields.io/badge/Flutter-3.47-02569B?logo=flutter)
 ![Style](https://img.shields.io/badge/style-very__good__analysis-B22C89)
 
@@ -9,7 +9,6 @@
 Loyiha Clean Architecture, BLoC, Firebase (Auth, Firestore, Functions, FCM, Storage) va to'liq CI/CD bilan qurilgan.
 Uch til (o'zbek, rus, ingliz), kun/tun rejimi, offline kesh va 180+ avtomatik test.
 
-> `OWNER` ni GitHub foydalanuvchi nomingizga almashtiring.
 
 ## Skrinshotlar
 
@@ -245,6 +244,9 @@ flutter test integration_test --flavor dev --dart-define-from-file=env/dev.json 
 - **release.yml** — `main`ga merge: prod flavor, `--obfuscate --split-debug-info`, `--split-per-abi` APK → GitHub Releases (`v<version>`).
 
 GitHub Secrets: `ENV_PROD_JSON`, `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEY_PROPERTIES`, `MAPS_API_KEY`, `CODECOV_TOKEN`.
+Birinchi uchtasi bo'lmasa, release workflow ogohlantirish bilan o'tkazib yuboriladi (yiqilmaydi). Ular qo'shilgach, *Actions → Release APK → Run workflow* bilan qo'lda ishga tushirish mumkin.
+
+Ilova faqat GitHub Releases orqali APK sifatida tarqatiladi — Google Play / App Store'ga chiqarish loyiha doirasiga kirmaydi.
 
 `ANDROID_KEY_PROPERTIES` namunasi:
 
