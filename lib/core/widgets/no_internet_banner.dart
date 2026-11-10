@@ -12,18 +12,19 @@ class NoInternetBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final offline = context.select<ConnectivityCubit, bool>(
+      (c) => c.state == ConnectivityStatus.offline,
+    );
     return Column(
       children: [
-        BlocBuilder<ConnectivityCubit, ConnectivityStatus>(
-          builder: (context, status) {
-            final offline = status == ConnectivityStatus.offline;
-            return AnimatedSize(
-              duration: const Duration(milliseconds: 250),
-              child: offline ? const _Banner() : const SizedBox(width: double.infinity),
-            );
-          },
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          child: offline ? const _Banner() : const SizedBox(width: double.infinity),
         ),
-        Expanded(child: child),
+        // The banner already covers the status bar: avoid double padding.
+        Expanded(
+          child: MediaQuery.removePadding(context: context, removeTop: offline, child: child),
+        ),
       ],
     );
   }
